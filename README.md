@@ -1,229 +1,227 @@
+---
 
-#  Terraform Module Documentation
+# **Terraform Module CI/CD Documentation**
 
-## Author Information
-
-| Created By | Created On | Version | Last Updated By | Reviewed By |
-| ---------- | ---------- | ------- | --------------- | ----------- |
-| Anuj Jain  | 10-09-2025 | V1.0    | -               | -           |
+<img width="2540" height="1420" alt="image" src="https://github.com/user-attachments/assets/435c26b6-1f33-4b37-ae8c-4496e8f0988b" />
 
 ---
 
-## Table of Contents
+## **Author Details**
+
+| **Created By** | **Created On** | **Version** | **Last Updated By** | **Pre Reviewer** | **L0 Reviewer** | **L1 Reviewer** | **L2 Reviewer** |
+| -------------- | -------------- | ----------- | ------------------- | ---------------- | --------------- | --------------- | --------------- |
+| Anuj Jain   | 19-09-2025     | V1.0        | Anuj Jain        | Prashant              | TBD             | –               | –               |
+
+---
+
+## **Table of Contents**
 
 1. [Introduction](#introduction)
-2. [What are Terraform Modules?](#what-are-terraform-modules)
-3. [Why Use Terraform Modules?](#why-use-terraform-modules)
-4. [Best Practices for Terraform Modules](#best-practices-for-terraform-modules)
-5. [CI/CD Workflows with Terraform Modules](#cicd-workflows-with-terraform-modules)
-6. [Tools Used in CI/CD Pipeline](#tools-used-in-cicd-pipeline)
-7. [Validation Steps](#validation-steps)
-8. [Deployment Lifecycle](#deployment-lifecycle)
-9. [Conclusion](#conclusion)
-10. [References](#references)
+2. [What is Terraform Module CI/CD?](#what-is-terraform-module-cicd)
+3. [Why Terraform Module CI/CD?](#why-terraform-module-cicd)
+4. [Terraform CI Workflow](#terraform-ci-workflow)
+5. [Terraform CD Workflow](#terraform-cd-workflow)
+6. [Supported Functions](#supported-functions)
+7. [System Requirements & Prerequisites](#system-requirements--prerequisites)
+8. [Jenkins Usage Example](#jenkins-usage-example)
+9. [Inputs and Outputs](#inputs-and-outputs)
+10. [Best Practices](#best-practices)
+11. [Deployment Lifecycle](#deployment-lifecycle)
+12. [Troubleshooting](#troubleshooting)
+13. [Conclusion](#conclusion)
+14. [Contact Information](#contact-information)
+15. [References](#references)
 
 ---
 
-## 1. Introduction
+## **Introduction**
 
-Terraform modules are reusable and shareable components that allow infrastructure teams to build **standardized, maintainable, and scalable infrastructure as code (IaC)**.
-They encapsulate infrastructure resources and logic, making deployments **consistent across environments**.
+This documentation provides a detailed guide for implementing **CI/CD workflows for Terraform modules** using Jenkins and a shared library.
+
+It standardizes the process of **validating, planning, applying, and destroying infrastructure** across environments, ensuring **consistency, reliability, and reusability**.
 
 ---
 
-## 2. What are Terraform Modules?
+## **What is Terraform Module CI/CD?**
 
-* A **Terraform module** is a container for multiple resources that are used together.
-* Every `.tf` file is part of a module (even a single `main.tf`).
-* **Reusable modules** are created to provision common infrastructure components like VPCs, subnets, security groups, EC2 instances, databases, etc.
+Terraform Module CI/CD is the automated pipeline that:
 
-**Example structure:**
+* Validates module code.
+* Generates execution plans.
+* Applies infrastructure changes safely.
+* Destroys infrastructure when required.
 
-```bash
-modules/
-  └── vpc/
-      ├── main.tf
-      ├── variables.tf
-      ├── outputs.tf
-      └── README.md
+This automation reduces errors, improves delivery speed, and ensures every change is version-controlled and auditable.
+
+---
+
+## **Why Terraform Module CI/CD?**
+
+*  **Faster Delivery** – Automates provisioning and updates.
+*  **Consistency** – Enforces standard workflows across projects.
+*  **Security** – Integrates with tools like `tfsec` / `checkov`.
+*  **Auditability** – All changes tracked in Git/Jenkins logs.
+* 🛡 **Safety** – Requires plan review/approval before apply.
+
+---
+
+## **Terraform CI Workflow**
+
+### **Steps**
+
+1. Initialize Terraform (`terraform init`).
+2. Check formatting (`terraform fmt -check`).
+3. Validate configuration (`terraform validate`).
+4. Lint and security scan (`tflint`, `tfsec`, `checkov`).
+5. Generate execution plan (`terraform plan`).
+
+---
+
+## **Terraform CD Workflow**
+
+### **Steps**
+
+1. Apply infrastructure changes (`terraform apply`).
+2. Destroy infrastructure if required (`terraform destroy`).
+3. Monitor logs and verify state consistency.
+
+---
+
+## **Supported Functions**
+
+| **Function**          | **Stage** | **Description**                    |
+| --------------------- | --------- | ---------------------------------- |
+| `terraformInit()`     | CI        | Initializes working directory      |
+| `terraformValidate()` | CI        | Validates syntax and configuration |
+| `terraformPlan()`     | CI        | Creates execution plan             |
+| `terraformApply()`    | CD        | Applies infrastructure changes     |
+| `terraformDestroy()`  | CD        | Destroys infrastructure safely     |
+
+---
+
+## **System Requirements & Prerequisites**
+
+* Jenkins with Pipeline & Shared Library support.
+* Terraform ≥ 1.5.0 installed on agents.
+* Shared library added in Jenkins global config.
+* GitHub/GitLab/Bitbucket repo with Terraform modules.
+* Cloud provider credentials configured in Jenkins credentials store.
+
+---
+
+## **Jenkins Usage Example**
+
+```groovy
+@Library('terraform-shared-library') _
+
+pipeline {
+    agent any
+    stages {
+        stage('Init') {
+            steps { script { terraformInit() } }
+        }
+        stage('Validate') {
+            steps { script { terraformValidate() } }
+        }
+        stage('Plan') {
+            steps { script { terraformPlan() } }
+        }
+        stage('Apply') {
+            when { branch 'main' }
+            steps { script { terraformApply() } }
+        }
+        stage('Destroy') {
+            when { branch 'cleanup' }
+            steps { script { terraformDestroy() } }
+        }
+    }
+}
 ```
 
 ---
 
-## 3. Why Use Terraform Modules?
+## **Inputs and Outputs**
 
-| Benefit           | Explanation                                                             |
-| ----------------- | ----------------------------------------------------------------------- |
-| Reusability       | Write once, use across multiple environments/projects.                  |
-| Standardization   | Enforce company standards for cloud infrastructure.                     |
-| Maintainability   | Easier updates and bug fixes with centralized changes.                  |
-| Scalability       | Infrastructure patterns can scale quickly without rewriting code.       |
-| Reduced Errors    | Encapsulation reduces human error in copy-pasting code.                 |
-| CI/CD Integration | Modules can be tested, versioned, and promoted across pipelines easily. |
+### **Inputs**
 
----
+| **Parameter**     | **Description**                          | **Required** | **Example**        |
+| ----------------- | ---------------------------------------- | ------------ | ------------------ |
+| `TF_VAR_region`   | Deployment region                        | Yes          | `us-east-1`        |
+| `TF_BACKEND_CONF` | Backend config file                      | Optional     | `backend.hcl`      |
+| `CREDENTIALS_ID`  | Jenkins credentials ID for provider auth | Yes          | `aws-jenkins-cred` |
+| `TF_WORKSPACE`    | Target workspace/environment             | Optional     | `dev`, `prod`      |
 
-## 4. Best Practices for Terraform Modules
+### **Outputs**
 
-✅ **Structure**
-
-* Keep **`main.tf`**, **`variables.tf`**, **`outputs.tf`**, and **`README.md`** in every module.
-* Avoid hardcoding; use variables with defaults.
-
-✅ **Versioning**
-
-* Use semantic versioning (`v1.0.0`) for modules.
-* Reference module versions explicitly:
-
-  ```hcl
-  module "vpc" {
-    source  = "git::https://github.com/org/modules.git//vpc?ref=v1.0.0"
-  }
-  ```
-
-✅ **Reusability**
-
-* Keep modules small and single-responsibility (one for VPC, one for S3, one for EC2).
-
-✅ **Validation & Linting**
-
-* Always run `terraform validate`, `terraform fmt`, and `tflint`.
-
-✅ **Security**
-
-* Scan with `checkov` / `tfsec` to catch misconfigurations.
-
-✅ **Documentation**
-
-* Provide `README.md` with usage examples.
-* Add input/output descriptions in `variables.tf` and `outputs.tf`.
-
-✅ **Testing**
-
-* Use **Terratest** or **kitchen-terraform** for automated module tests.
+| **Output**          | **Description**                      |
+| ------------------- | ------------------------------------ |
+| Terraform Plan File | `.tfplan` generated during pipeline  |
+| Deployment Status   | Success/Failure logs                 |
+| State File          | Updated state (local/remote backend) |
 
 ---
 
-## 5. CI/CD Workflows with Terraform Modules
+## **Best Practices**
 
-Terraform modules can be integrated into **CI/CD pipelines** for automated testing, validation, and deployment.
+* Use **remote state backends** (S3, GCS, Azure Blob) with locking.
+* Enforce **plan before apply**.
+* Store credentials in Jenkins securely.
+* Implement **branch strategy**:
 
-### Example Workflow:
-
-1. **Developer creates/updates module** → pushes to GitHub/GitLab.
-2. **CI pipeline triggers**:
-
-   * Run `terraform fmt -check`
-   * Run `terraform validate`
-   * Run `tflint`
-   * Run `checkov` (security check)
-3. **Plan stage**:
-
-   * Execute `terraform plan` and store plan as artifact.
-   * Optionally, approval step for reviewers.
-4. **Apply stage**:
-
-   * Deploy to target environment (dev → staging → prod).
+  * `main` → Apply.
+  * `cleanup` → Destroy.
+* Use **workspace separation** for dev/staging/prod.
+* Add **security checks** (`tfsec`, `checkov`) in CI stage.
 
 ---
 
-## 6. Tools Used in CI/CD Pipeline
+## **Deployment Lifecycle**
 
-| Tool                                     | Purpose                                     |
-| ---------------------------------------- | ------------------------------------------- |
-| **Terraform CLI**                        | Core IaC execution                          |
-| **tflint**                               | Static analysis, style and lint checks      |
-| **terraform-docs**                       | Auto-generate module documentation          |
-| **checkov / tfsec**                      | Security scanning                           |
-| **Terratest**                            | Automated testing of infrastructure modules |
-| **GitHub Actions / GitLab CI / Jenkins** | Pipeline orchestration                      |
-
----
-
-## 7. Validation Steps
-
-Before merging or applying modules, validate with:
-
-```bash
-terraform fmt -check       # Formatting
-terraform validate         # Syntax check
-tflint                     # Linting
-checkov -d .               # Security scan
-terraform plan             # Dry-run execution plan
-```
+| **Stage**          | **Action**                                       |
+| ------------------ | ------------------------------------------------ |
+| Code Commit        | Developer pushes Terraform code to Git           |
+| Validation         | Lint, syntax check, security scan                |
+| Plan               | Execution plan generated                         |
+| Approval           | (Optional) Manual approval required before apply |
+| Apply              | Apply infrastructure changes                     |
+| Monitor            | Logs/alerts monitored post-deployment            |
+| Destroy (Optional) | Clean-up infra when no longer needed             |
 
 ---
 
-## 8. Deployment Lifecycle
+## **Troubleshooting**
 
-Terraform modules typically follow a **promotion-based lifecycle**:
-
-1. **Development**
-
-   * Module created/updated locally.
-   * Tested with `terraform plan`.
-
-2. **Testing**
-
-   * CI/CD pipeline runs validation + Terratest.
-   * Test environment deployment.
-
-3. **Staging/Pre-Prod**
-
-   * Apply module with controlled data and infra.
-   * Security/compliance validation.
-
-4. **Production**
-
-   * Apply approved module versions.
-   * Version lock ensures consistency.
-
-**Diagram (simplified):**
-
-```
-Dev → Test → Staging → Prod
-   |       |        |
-   |       |        └── Approval + Security Scan
-   |       └── Automated Testing
-   └── Validation + Linting
-```
+| **Issue**                      | **Resolution**                                                          |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| `terraform init` fails         | Check backend config and credentials                                    |
+| No changes in plan             | Verify `.tf` files and workspace                                        |
+| Apply fails with IAM error     | Update Jenkins credentials and IAM permissions                          |
+| State lock error               | Use `terraform force-unlock <ID>`                                       |
+| Functions not found in Jenkins | Ensure library is imported using `@Library('terraform-shared-library')` |
 
 ---
 
-## 9. Conclusion
+## **Conclusion**
 
-Terraform modules are the **building blocks** of scalable, reusable, and secure infrastructure.
-By following best practices and integrating modules into **CI/CD workflows**, teams can ensure:
-
-* Faster deployments
-* Reduced human error
-* Consistency across environments
-* Security and compliance
+The **Terraform Module CI/CD framework** ensures a **standardized, reliable, and secure pipeline** for infrastructure automation. Using shared libraries in Jenkins minimizes repetition and enforces **best practices** for managing infrastructure at scale.
 
 ---
 
-## Contact Information
+## **Contact Information**
 
-| Name      | Email                                             |
-| --------- | ------------------------------------------------- |
-| Anuj Jain | [anuj@mygurukulam.co](mailto:anuj@mygurukulam.co) |
-
-
-
-## 10. References
-
-* [Terraform Modules Docs](https://developer.hashicorp.com/terraform/language/modules)
-* [Terraform Best Practices](https://www.terraform-best-practices.com/)
-* [Checkov Security Scanner](https://www.checkov.io/)
-* [Terratest](https://terratest.gruntwork.io/)
+| **Name**     | **Email**                                                         |
+| ------------ | ----------------------------------------------------------------- |
+| Anuj Jain | [Anuj.jain@mygurukulam.co](mailto:vivek.sharma@mygurukulam.co) |
 
 ---
 
+## **References**
 
-## References
+| **Title**               | **Link**                                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Terraform Documentation | [https://developer.hashicorp.com/terraform/docs](https://developer.hashicorp.com/terraform/docs)                         |
+| Jenkins Pipeline Docs   | [https://www.jenkins.io/doc/book/pipeline/](https://www.jenkins.io/doc/book/pipeline/)                                   |
+| Shared Library Guide    | [https://www.jenkins.io/doc/book/pipeline/shared-libraries/](https://www.jenkins.io/doc/book/pipeline/shared-libraries/) |
 
-| Link                                                                                                                                                                         | Description                          |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| [https://github.com/OT-MICROSERVICES/documentation-template/wiki/Application-Template](https://github.com/OT-MICROSERVICES/documentation-template/wiki/Application-Template) | Base template followed               |
-| [https://www.jenkins.io/doc/book/installing/linux/#debianubuntu](https://www.jenkins.io/doc/book/installing/linux/#debianubuntu)                                             | Format reference for system sections |
-| [https://amplifi.com/user-guide/FAQs.html](https://amplifi.com/user-guide/FAQs.html)                                                                                         | Structure idea for FAQs section      |
+---
+
